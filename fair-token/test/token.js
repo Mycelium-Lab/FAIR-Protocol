@@ -140,4 +140,13 @@ contract('FairToken', (accounts) => {
     allowance = await this.token.allowance(alice, bob)
     assert.deepEqual(allowance.toString(), ether("5000").toString())
   })
+
+  it("burn", async () => {
+    const jack = accounts[6]
+    // jack had 1500 tokens
+    let balance = await this.token.balanceOf(jack)
+    await this.token.burn(ether("1000"), { from: jack } )
+    balance = await this.token.balanceOf(jack)
+    assert.deepEqual(balance.toString(), ether("500").toString())
+  })
 })

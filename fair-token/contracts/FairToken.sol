@@ -26,4 +26,8 @@ contract FairToken is ERC20Capped, AccessControl {
         require(hasRole(MINTER_ROLE, _msgSender()), "mint: unauthorized call!");
         _mint(recipient, amount);
     }
+
+    function burn(uint256 amount) public {
+        _burn(_msgSender(), amount);
+    }
 }
