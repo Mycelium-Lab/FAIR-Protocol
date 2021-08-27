@@ -4,6 +4,15 @@ contract('FairToken', (accounts) => {
   before(async () => {
     this.token = await FairToken.deployed()
     this.admin = accounts[0]  
+    this.errorCatcher = async (action) => {
+      let err = ""
+      try {
+        await action()
+      } catch (error) {
+        err = error.reason
+      }
+      return err
+    }
   })
 
   it('deploy', async () => {
@@ -30,42 +39,30 @@ contract('FairToken', (accounts) => {
     const non_minter = accounts[2]
     const mint_to = accounts[3]
 
+    const unauthedMintMsg = "mint: unauthorized call!"
+
     // admin cannot mint by default
-    await (async () => {
-      let err = ""
-      try {
-        await this.token.mint(mint_to, '2000000000000000000000', { from: this.admin })
-      } catch (error) {
-        err = error.reason
-      }
-      assert.deepEqual(err, "mint: unauthorized call!")
-    })()
+    const _unauthedMintMsg_0 = await this.errorCatcher(
+      async () => await this.token.mint(mint_to, '2000000000000000000000', { from: this.admin })
+    )
+    assert.deepEqual(_unauthedMintMsg_0, unauthedMintMsg)
     
     // ordinary users cannot mint
-    await (async () => {
-      let err = ""
-      try {
-        await this.token.mint(mint_to, '2000000000000000000000', { from: non_minter })
-      } catch (error) {
-        err = error.reason
-      }
-      assert.deepEqual(err, "mint: unauthorized call!")
-    })()
+    const _unauthedMintMsg_1 = await this.errorCatcher(
+      async () => await this.token.mint(mint_to, '2000000000000000000000', { from: non_minter })
+    )
+    assert.deepEqual(_unauthedMintMsg_1, unauthedMintMsg)
   })
 
   it('max supply', async () => {
     const minter = accounts[1]
     const mint_to = accounts[3]
-    await (async () => {
-      let err = ""
-      try {
-        // minting more tokens than the specified cap
-        await this.token.mint(mint_to, '50000001000000000000000000', { from: minter })
-      } catch (error) {
-        err = error.reason
-      }
-      assert.deepEqual(err, "ERC20Capped: cap exceeded")
-    })() 
+
+    const _capExceededMsg = await this.errorCatcher(
+      // minting more tokens than the specified cap
+      async () => await this.token.mint(mint_to, '50000001000000000000000000', { from: minter })
+    )
+    assert.deepEqual(_capExceededMsg, "ERC20Capped: cap exceeded")
   })
 
   it('transfer ownership', async () => {
@@ -78,16 +75,11 @@ contract('FairToken', (accounts) => {
     await this.token.renounceRole(admin_role, this.admin, { from: this.admin })
     
     // check that old admin is no longer eligible for management
-    await (async () => {
-      let err = ""
-      try {
-        // minting more tokens than the specified cap
-        await this.token.grantRole(minter_role, this.admin, { from: this.admin })
-      } catch (error) {
-        err = error.reason
-      }
-      assert.deepEqual(err, `AccessControl: account ${this.admin.toLowerCase()} is missing role ${admin_role}`)
-    })() 
+    const _accessControlMsg = await this.errorCatcher(
+      // trying to grant a role from the old admin
+      async () => await this.token.grantRole(minter_role, this.admin, { from: this.admin })
+    )
+    assert.deepEqual(_accessControlMsg, `AccessControl: account ${this.admin.toLowerCase()} is missing role ${admin_role}`)
   })
 
   it('assign minter role', async () => {
@@ -112,16 +104,12 @@ contract('FairToken', (accounts) => {
 
     // remove minter
     await this.token.revokeRole(minter_role, new_minter, { from: admin })
+    
     // try to mint from the revoked address
-    await (async () => {
-      let err = ""
-      try {
-        await this.token.mint(mint_to, mintable_amount, { from: new_minter })
-      } catch (error) {
-        err = error.reason
-      }
-      assert.deepEqual(err, "mint: unauthorized call!")
-    })() 
+    const _unauthedMintMsg = await this.errorCatcher(
+      async () => this.token.mint(mint_to, mintable_amount, { from: new_minter })
+    )
+    assert.deepEqual(_unauthedMintMsg, "mint: unauthorized call!")
   })
 
   it('transfer', async () => {
