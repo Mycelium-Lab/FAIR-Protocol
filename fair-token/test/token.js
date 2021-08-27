@@ -1,4 +1,5 @@
 const FairToken = artifacts.require("FairToken")
+const { ether } = require("@openzeppelin/test-helpers")
 
 contract('FairToken', (accounts) => {
   before(async () => {
@@ -30,9 +31,9 @@ contract('FairToken', (accounts) => {
     const mint_to = accounts[3]
 
     // mint 2000 FAIR
-    await this.token.mint(mint_to, '2000000000000000000000', { from: minter })
+    await this.token.mint(mint_to, ether("2000"), { from: minter })
     const balance = await this.token.balanceOf(mint_to)
-    assert.deepEqual(balance.toString(), '2000000000000000000000')
+    assert.deepEqual(balance.toString(), ether("2000").toString())
   })
 
   it('unauthed minting', async () => {
@@ -43,13 +44,13 @@ contract('FairToken', (accounts) => {
 
     // admin cannot mint by default
     const _unauthedMintMsg_0 = await this.errorCatcher(
-      async () => await this.token.mint(mint_to, '2000000000000000000000', { from: this.admin })
+      async () => await this.token.mint(mint_to, ether("2000"), { from: this.admin })
     )
     assert.deepEqual(_unauthedMintMsg_0, unauthedMintMsg)
     
     // ordinary users cannot mint
     const _unauthedMintMsg_1 = await this.errorCatcher(
-      async () => await this.token.mint(mint_to, '2000000000000000000000', { from: non_minter })
+      async () => await this.token.mint(mint_to, ether("2000"), { from: non_minter })
     )
     assert.deepEqual(_unauthedMintMsg_1, unauthedMintMsg)
   })
@@ -60,7 +61,7 @@ contract('FairToken', (accounts) => {
 
     const _capExceededMsg = await this.errorCatcher(
       // minting more tokens than the specified cap
-      async () => await this.token.mint(mint_to, '50000001000000000000000000', { from: minter })
+      async () => await this.token.mint(mint_to, ether("50000001"), { from: minter })
     )
     assert.deepEqual(_capExceededMsg, "ERC20Capped: cap exceeded")
   })
@@ -91,7 +92,7 @@ contract('FairToken', (accounts) => {
     const new_minter = accounts[5]
     const mint_to = accounts[3]
 
-    const mintable_amount = '2000000000000000000000'
+    const mintable_amount = ether("2000")
 
     // add new minter
     await this.token.grantRole(minter_role, new_minter, { from: admin })
@@ -100,11 +101,11 @@ contract('FairToken', (accounts) => {
 
     const balance = await this.token.balanceOf(mint_to)
     // mintable_amount + old amount
-    assert.deepEqual(balance.toString(), '6000000000000000000000')
+    assert.deepEqual(balance.toString(), ether("6000").toString())
 
     // remove minter
     await this.token.revokeRole(minter_role, new_minter, { from: admin })
-    
+
     // try to mint from the revoked address
     const _unauthedMintMsg = await this.errorCatcher(
       async () => this.token.mint(mint_to, mintable_amount, { from: new_minter })
@@ -113,6 +114,30 @@ contract('FairToken', (accounts) => {
   })
 
   it('transfer', async () => {
+    const minter = accounts[1]
+    const jack = accounts[6]
+    const john = accounts[7]
 
+    await this.token.mint(jack, ether("2000"), { from: minter })
+    await this.token.transfer(john, ether("500"), { from: jack })
+
+    const jackBalance = await this.token.balanceOf(jack)
+    const johnBalance = await this.token.balanceOf(john)
+
+    assert.deepEqual(jackBalance.toString(), ether("1500").toString())
+    assert.deepEqual(johnBalance.toString(), ether("500").toString())
+  })
+
+  it("approve", async () => {
+    const alice = accounts[8]
+    const bob = accounts[9]
+
+    let allowance = await this.token.allowance(alice, bob)
+    assert.deepEqual(allowance.toString(), "0")
+
+    await this.token.approve(bob, ether("5000"), { from: alice })
+
+    allowance = await this.token.allowance(alice, bob)
+    assert.deepEqual(allowance.toString(), ether("5000").toString())
   })
 })
