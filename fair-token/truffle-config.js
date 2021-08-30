@@ -87,8 +87,8 @@
       timeoutBlocks: 200,
       skipDryRun: true
     },
-    matic: {
-      provider: () => new HDWalletProvider(MNEMONIC, `https://rpc-mumbai.matic.today`),
+    polygon: {
+      provider: () => new HDWalletProvider(MNEMONIC, 'https://polygon-rpc.com/'),
       network_id: 137,
       confirmations: 2,
       timeoutBlocks: 200,
