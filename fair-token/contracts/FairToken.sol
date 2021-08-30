@@ -3,9 +3,10 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Capped.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
-contract FairToken is ERC20Capped, AccessControl {
+contract FairToken is ERC20Burnable, ERC20Capped, AccessControl {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
 	constructor(
@@ -21,13 +22,12 @@ contract FairToken is ERC20Capped, AccessControl {
         _setupRole(DEFAULT_ADMIN_ROLE, _admin);
         _setupRole(MINTER_ROLE, _minter);
     }
-    
-    function mint(address recipient, uint256 amount) public {
-        require(hasRole(MINTER_ROLE, _msgSender()), "mint: unauthorized call!");
-        _mint(recipient, amount);
-    }
 
-    function burn(uint256 amount) public {
-        _burn(_msgSender(), amount);
+    function _mint(address recipient, uint256 amount) internal virtual override (ERC20, ERC20Capped) {
+        super._mint(recipient, amount);
+    }
+    
+    function mint(address recipient, uint256 amount) public onlyRole(MINTER_ROLE) {
+        _mint(recipient, amount);
     }
 }

@@ -39,20 +39,19 @@ contract('FairToken', (accounts) => {
   it('unauthed minting', async () => {
     const non_minter = accounts[2]
     const mint_to = accounts[3]
-
-    const unauthedMintMsg = "mint: unauthorized call!"
+    const minter_role = await this.token.MINTER_ROLE()
 
     // admin cannot mint by default
     const _unauthedMintMsg_0 = await this.errorCatcher(
       async () => await this.token.mint(mint_to, ether("2000"), { from: this.admin })
     )
-    assert.deepEqual(_unauthedMintMsg_0, unauthedMintMsg)
+    assert.deepEqual(_unauthedMintMsg_0, `AccessControl: account ${this.admin.toLowerCase()} is missing role ${minter_role}`)
     
     // ordinary users cannot mint
     const _unauthedMintMsg_1 = await this.errorCatcher(
       async () => await this.token.mint(mint_to, ether("2000"), { from: non_minter })
     )
-    assert.deepEqual(_unauthedMintMsg_1, unauthedMintMsg)
+    assert.deepEqual(_unauthedMintMsg_1, `AccessControl: account ${non_minter.toLowerCase()} is missing role ${minter_role}`)
   })
 
   it('max supply', async () => {
@@ -110,7 +109,7 @@ contract('FairToken', (accounts) => {
     const _unauthedMintMsg = await this.errorCatcher(
       async () => this.token.mint(mint_to, mintable_amount, { from: new_minter })
     )
-    assert.deepEqual(_unauthedMintMsg, "mint: unauthorized call!")
+    assert.deepEqual(_unauthedMintMsg, `AccessControl: account ${new_minter.toLowerCase()} is missing role ${minter_role}`)
   })
 
   it('transfer', async () => {
